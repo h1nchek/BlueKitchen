@@ -47,3 +47,14 @@ bluekitchen inspect-boot boot.img --json
 The parser validates declared header sizes, page sizes, section bounds, and supported header versions. It does not extract, decompress, modify, repack, verify AVB, or establish device compatibility. Vendor boot images (`VNDRBOOT`) are identified but not parsed yet.
 
 Format references: [AOSP boot image header documentation](https://source.android.com/docs/core/architecture/bootloader/boot-image-header) and [AOSP bootimg.h](https://android.googlesource.com/platform/system/tools/mkbootimg/+/refs/heads/android17-release/include/bootimg/bootimg.h).
+
+
+## Expanding sparse images
+
+Use `expand-sparse` to convert an Android sparse image into a raw image:
+
+```bash
+bluekitchen expand-sparse system.img system.raw
+```
+
+The command validates the complete sparse chunk layout before creating the output. It processes RAW, FILL, DONT_CARE, and CRC32 chunks in a streaming manner. DONT_CARE ranges are represented as zero-filled holes where the filesystem supports sparse files. The source is never modified, and an existing destination is never overwritten. The output can be as large as the expanded image size, so check available disk space first.
