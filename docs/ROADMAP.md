@@ -24,7 +24,7 @@ BlueKitchen is developed in small, verifiable stages. A roadmap item is not comp
 
 - [x] Detect and validate Android sparse image headers and chunk layout (initial)
 - [ ] Inspect super image metadata through optional external tools
-- [ ] Inspect boot and vendor_boot headers
+- [x] Inspect Android boot image headers v0-v4 and section boundaries (initial)\n- [ ] Inspect vendor_boot headers and ramdisk fragment tables
 - [x] Document sparse-image support and current limitations
 - [ ] Document tool dependencies and supported image versions
 
