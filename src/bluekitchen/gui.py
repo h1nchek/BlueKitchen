@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import queue
 import threading
@@ -202,7 +203,10 @@ class BlueKitchenApp:
             messagebox.showerror("BlueKitchen", f"Could not save report: {exc}")
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
+    parser = argparse.ArgumentParser(prog="bluekitchen-gui")
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+    parser.parse_args(argv)
     root = tk.Tk()
     BlueKitchenApp(root)
     root.mainloop()
