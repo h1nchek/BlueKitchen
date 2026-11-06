@@ -19,12 +19,14 @@ from bluekitchen.extractor import ExtractionError, extract_zip
 from bluekitchen.image import ImageError, expand_sparse_image, inspect_image
 from bluekitchen.inspector import InspectionError, inspect_zip
 from bluekitchen.payload import PayloadError, inspect_payload
+from bluekitchen.packer import PackingError, pack_zip
 from bluekitchen.super_extract import SuperExtractError, extract_super_partition
 
 
 OPERATIONS: dict[str, tuple[str, bool]] = {
     "Inspect ROM ZIP": ("zip", False),
     "Extract ROM ZIP": ("extract", True),
+    "Build ROM ZIP": ("pack", True),
     "Inspect OTA payload": ("payload", False),
     "Inspect Android image": ("image", False),
     "Expand sparse image": ("expand", True),
@@ -122,6 +124,8 @@ class BlueKitchenApp:
                     self.output_path.set(str(source.with_suffix("")) + ".raw")
                 elif OPERATIONS[self.operation.get()][0] == "super-extract":
                     self.output_path.set(str(source.with_suffix("")) + "-partition.img")
+                elif OPERATIONS[self.operation.get()][0] == "pack":
+                    self.output_path.set(str(source.with_suffix("")) + ".zip")
 
     def _browse_output(self) -> None:
         key, _needs_output = OPERATIONS[self.operation.get()]
@@ -172,6 +176,7 @@ class BlueKitchenApp:
                     "boot": inspect_boot_image,
                     "super": inspect_super_image,
                     "super-extract": extract_super_partition,
+                    "pack": pack_zip,
                 }
                 if key == "super-extract":
                     result = functions[key](source, partition, destination)
@@ -183,6 +188,7 @@ class BlueKitchenApp:
             except (
                 OSError, ValueError, RuntimeError, BootImageError, SuperImageError,
                 ExtractionError, ImageError, InspectionError, PayloadError, SuperExtractError,
+                PackingError,
             ) as exc:
                 self.results.put((False, str(exc)))
 
