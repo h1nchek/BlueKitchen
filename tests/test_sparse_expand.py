@@ -2,7 +2,7 @@ import struct
 
 import pytest
 
-from bluekitchen.image import ImageError, expand_sparse_image, inspect_image
+from bluekitchen.image import ImageError, expand_sparse_image
 
 
 def _chunk(kind, blocks, data=b"", header_size=12):
