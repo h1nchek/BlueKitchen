@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from bluekitchen import __version__
+from bluekitchen.image import ImageError, inspect_image
 from bluekitchen.inspector import InspectionError, inspect_zip
 from bluekitchen.payload import PayloadError, inspect_payload
 
@@ -25,6 +26,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     inspect_parser.add_argument("archive", type=Path, help="Path to the ROM ZIP")
     inspect_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
+
+    image_parser = commands.add_parser(
+        "inspect-image", help="Inspect an Android sparse image or identify a raw image"
+    )
+    image_parser.add_argument("image", type=Path, help="Path to an image file")
+    image_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
 
     payload_parser = commands.add_parser(
         "inspect-payload", help="Inspect an Android OTA payload.bin header and manifest"
@@ -60,6 +67,33 @@ def main(argv: list[str] | None = None) -> int:
                 print("WARNING: unsafe archive paths detected:")
                 for name in result["unsafe_paths"]:
                     print(f"  - {name}")
+        return 0
+    if args.command == "inspect-image":
+        try:
+            result = inspect_image(args.image)
+        except ImageError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+
+        if args.json:
+            print(json.dumps(result, indent=2, ensure_ascii=False))
+        elif result["is_sparse"]:
+            print(f"Image: {result['file']}")
+            print(f"Format: Android sparse v{result['major_version']}.{result['minor_version']}")
+            print(f"File size: {result['file_size']} bytes")
+            print(f"Expanded size: {result['expanded_size']} bytes")
+            print(f"Block size: {result['block_size']} bytes")
+            print(f"Chunks: {result['total_chunks']}")
+            for name, count in result["chunk_counts"].items():
+                print(f"  {name}: {count}")
+            if result["trailing_bytes"]:
+                print(f"Trailing bytes: {result['trailing_bytes']}")
+            print("Inspection only: image data was not expanded or modified.")
+        else:
+            print(f"Image: {result['file']}")
+            print("Format: raw or unknown (not an Android sparse image)")
+            print(f"File size: {result['file_size']} bytes")
+            print("Filesystem type was not determined.")
         return 0
     if args.command == "inspect-payload":
         try:
