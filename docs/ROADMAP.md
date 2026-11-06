@@ -25,6 +25,7 @@ BlueKitchen is developed in small, verifiable stages. A roadmap item is not comp
 - [x] Detect and validate Android sparse image headers and chunk layout (initial)
 - [x] Expand sparse images to new raw files without overwriting inputs (initial)
 - [x] Parse liblp geometry, metadata slots, partitions, extents, groups and block devices in raw super images (initial)
+- [x] Extract linear and zero extents for a selected logical partition from raw super images (initial)
 - [ ] Support liblp metadata parsing directly from sparse super images
 - [x] Inspect Android boot image headers v0-v4 and section boundaries (initial)
 - [x] Inspect vendor_boot v3/v4 headers and ramdisk fragment tables (initial)
