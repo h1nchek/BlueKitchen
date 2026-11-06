@@ -81,12 +81,18 @@ def test_reject_invalid_magic(tmp_path):
         inspect_boot_image(image)
 
 
-def test_vendor_boot_is_reported_as_unsupported(tmp_path):
+def test_vendor_boot_image_is_auto_detected(tmp_path):
     image = tmp_path / "vendor_boot.img"
-    image.write_bytes(b"VNDRBOOT" + bytes(128))
+    header = bytearray(4096)
+    header[:8] = b"VNDRBOOT"
+    struct.pack_into("<5I", header, 8, 3, 4096, 0, 0, 0)
+    struct.pack_into("<I", header, 2096, 2112)
+    image.write_bytes(header)
 
-    with pytest.raises(BootImageError, match="vendor_boot parsing"):
-        inspect_boot_image(image)
+    result = inspect_boot_image(image)
+
+    assert result["format"] == "android_vendor_boot_image"
+    assert result["header_version"] == 3
 
 
 def test_reject_truncated_kernel_section(tmp_path):
