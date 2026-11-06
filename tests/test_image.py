@@ -6,7 +6,7 @@ from bluekitchen.image import ImageError, inspect_image
 
 
 def _chunk(kind, blocks, data=b"", header_size=12):
-    return struct.pack("<2H2I", kind, 0, blocks, header_size + len(data)) + data
+    return struct.pack("<2H2I", kind, 0, blocks, header_size + len(data)) + bytes(header_size - 12) + data
 
 
 def _sparse(chunks, total_blocks, block_size=4096, file_header_size=28, chunk_header_size=12):
