@@ -14,6 +14,7 @@ BlueKitchen is developed in small, verifiable stages. A roadmap item is not comp
 
 - [x] Read-only ZIP inspection and Android marker detection
 - [x] Bounded ZIP extraction with traversal, symlink and size-limit checks
+- [x] Create a ZIP package from a prepared directory with symlink and overwrite protection
 - [x] Parse Android OTA payload headers and manifest metadata (initial)
 - [x] Summarize payload partitions and install operation types (initial)
 - [ ] Inspect OTA metadata and updater configuration
@@ -49,7 +50,8 @@ BlueKitchen is developed in small, verifiable stages. A roadmap item is not comp
 
 - [ ] Define format-specific write APIs and validation contracts
 - [ ] Add controlled image modification workflows
-- [ ] Add reproducible ZIP/OTA package construction
+- [x] Add bounded ZIP package construction from prepared directory trees
+- [ ] Add reproducible OTA package construction
 - [ ] Add checksums and post-build verification
 
 ## Safety and quality gates
