@@ -21,9 +21,11 @@ jobs:
           - os: ubuntu-latest
             artifact: linux-x86_64
             binary: dist/bluekitchen
+            gui_binary: dist/bluekitchen-gui
           - os: windows-latest
             artifact: windows-x86_64
             binary: dist/bluekitchen.exe
+            gui_binary: dist/bluekitchen-gui.exe
           - os: macos-latest
             artifact: macos
             binary: dist/bluekitchen
@@ -47,6 +49,16 @@ jobs:
           --name bluekitchen
           --paths src
           src/bluekitchen/__main__.py
+      - name: Build desktop GUI
+        run: >
+          pyinstaller
+          --noconfirm
+          --clean
+          --onefile
+          --windowed
+          --name bluekitchen-gui
+          --paths src
+          src/bluekitchen/gui.py
       - name: Verify executable (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
@@ -54,11 +66,20 @@ jobs:
       - name: Verify executable (Unix)
         if: runner.os != 'Windows'
         run: ./${{ matrix.binary }} --version
+      - name: Verify GUI executable (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./${{ matrix.gui_binary }} --version
+      - name: Verify GUI executable (Unix)
+        if: runner.os != 'Windows'
+        run: ./${{ matrix.gui_binary }} --version
       - name: Upload executable
         uses: actions/upload-artifact@v4
         with:
           name: bluekitchen-${{ matrix.artifact }}
-          path: ${{ matrix.binary }}
+          path: |
+            ${{ matrix.binary }}
+            ${{ matrix.gui_binary }}
           if-no-files-found: error
           retention-days: 30
 
@@ -116,6 +137,7 @@ jobs:
           root="dist/deb-root"
           mkdir -p "$root/usr/bin" "$root/DEBIAN" dist/installers
           install -m 0755 dist/bluekitchen "$root/usr/bin/bluekitchen"
+          install -m 0755 dist/bluekitchen-gui "$root/usr/bin/bluekitchen-gui"
           cat > "$root/DEBIAN/control" <<EOF
           Package: bluekitchen
           Version: $version
@@ -135,6 +157,7 @@ jobs:
           version="${{ steps.version.outputs.version }}"
           mkdir -p dist/pkg-root dist/installers
           install -m 0755 dist/bluekitchen dist/pkg-root/bluekitchen
+          install -m 0755 dist/bluekitchen-gui dist/pkg-root/bluekitchen-gui
           pkgbuild --root dist/pkg-root --identifier org.bluekitchen.cli --version "$version" --install-location /usr/local/bin "dist/installers/BlueKitchen-${version}-macos.pkg"
       - name: Upload installer
         uses: actions/upload-artifact@v4
