@@ -1,3 +1,5 @@
+import pytest
+
 from bluekitchen import super_extract
 from bluekitchen.super_extract import SuperExtractError, extract_super_partition
 
@@ -46,7 +48,7 @@ def test_refuse_existing_output(tmp_path, monkeypatch):
     output = tmp_path / "system.img"
     output.write_bytes(b"keep")
 
-    with __import__("pytest").raises(SuperExtractError, match="already exists"):
+    with pytest.raises(SuperExtractError, match="already exists"):
         extract_super_partition(source, "system", output)
 
     assert output.read_bytes() == b"keep"
@@ -61,5 +63,5 @@ def test_missing_partition_is_reported(tmp_path, monkeypatch):
         lambda _path, slot=0: {"partitions": [], "block_devices": []},
     )
 
-    with __import__("pytest").raises(SuperExtractError, match="not found"):
+    with pytest.raises(SuperExtractError, match="not found"):
         extract_super_partition(source, "system", tmp_path / "system.img")
