@@ -17,7 +17,7 @@ from bluekitchen.payload import PayloadError, inspect_payload
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="bluekitchen",
-        description="Inspect Android ROM packages safely (read-only).",
+        description="Analyze Android ROM packages and prepare image files without modifying source inputs.",
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     commands = parser.add_subparsers(dest="command", required=True)
