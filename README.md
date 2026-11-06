@@ -24,6 +24,7 @@ BlueKitchen is an open-source toolkit focused on making Android ROM work more un
 | Desktop GUI | Tkinter interface for common inspection and extraction tasks | Implemented (initial) |
 | ROM inspector | Read-only ZIP listing and Android marker detection | Implemented |
 | ZIP extraction | Bounded extraction into a new directory; rejects unsafe paths and symlinks | Implemented |
+| ZIP packaging | Create a ROM ZIP from a prepared directory without following symlinks | Implemented (initial) |
 | Payload analyzer | CrAU header and protobuf manifest summary; partition operation counts | Implemented (initial) |
 | Image tools | Android sparse-image inspection and expansion to raw images | Implemented (initial) |
 | Dynamic partitions | Read-only liblp metadata inspection for raw super images | Implemented (initial) |
@@ -60,6 +61,7 @@ Linux and macOS:
 | --- | --- |
 | inspect-zip ROM.zip | List ZIP contents and identify Android markers |
 | extract-zip ROM.zip output/ | Extract into a new directory with safety limits |
+| pack-zip directory/ output.zip | Package a prepared directory into a new ROM ZIP |
 | inspect-payload payload.bin | Parse OTA payload header and manifest |
 | inspect-image system.img | Inspect Android sparse image structure or identify a raw image |
 | expand-sparse system.img system.raw | Expand a sparse image without overwriting existing files |
