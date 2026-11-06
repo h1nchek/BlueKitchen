@@ -9,6 +9,7 @@ from pathlib import Path
 
 from bluekitchen import __version__
 from bluekitchen.boot import BootImageError, inspect_boot_image
+from bluekitchen.dynamic_partitions import SuperImageError, inspect_super_image
 from bluekitchen.image import ImageError, expand_sparse_image, inspect_image
 from bluekitchen.inspector import InspectionError, inspect_zip
 from bluekitchen.payload import PayloadError, inspect_payload
@@ -39,6 +40,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     boot_parser.add_argument("image", type=Path, help="Path to boot.img")
     boot_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
+
+    super_parser = commands.add_parser(
+        "inspect-super", help="Inspect Android dynamic partition metadata in a raw super image"
+    )
+    super_parser.add_argument("image", type=Path, help="Path to a raw super.img")
+    super_parser.add_argument("--slot", type=int, default=0, help="Metadata slot number (default: 0)")
+    super_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
 
     expand_parser = commands.add_parser(
         "expand-sparse", help="Expand a sparse image into a new raw image file"
@@ -107,6 +115,28 @@ def main(argv: list[str] | None = None) -> int:
             print("Format: raw or unknown (not an Android sparse image)")
             print(f"File size: {result['file_size']} bytes")
             print("Filesystem type was not determined.")
+        return 0
+    if args.command == "inspect-super":
+        try:
+            result = inspect_super_image(args.image, slot=args.slot)
+        except SuperImageError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+        if args.json:
+            print(json.dumps(result, indent=2, ensure_ascii=False))
+        else:
+            geometry = result["geometry"]
+            print(f"Super image: {result['file']}")
+            print(f"Metadata version: {result['metadata_version']}")
+            print(f"Metadata slot: {result['metadata_slot']} ({result['metadata_source']})")
+            print(f"Metadata slots available: {geometry['metadata_slot_count']}")
+            print(f"Partitions: {result['partition_count']}")
+            for partition in result["partitions"]:
+                print(
+                    f"  - {partition['name']}: {partition['size_bytes']} bytes, "
+                    f"group={partition['group']}, extents={partition['extent_count']}"
+                )
+            print("Inspection only: super image was not modified.")
         return 0
     if args.command == "expand-sparse":
         try:
