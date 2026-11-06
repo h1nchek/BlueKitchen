@@ -31,7 +31,7 @@ def _read_at(stream: BinaryIO, offset: int, size: int, description: str) -> byte
 
 
 def _c_string(data: bytes) -> str:
-    return data.split(b"\\0", 1)[0].decode("utf-8", errors="replace")
+    return data.split(bytes((0,)), 1)[0].decode("utf-8", errors="replace")
 
 
 def _check_section(
