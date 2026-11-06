@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import zipfile
 from pathlib import Path, PurePosixPath
 from typing import Any
+import zipfile
 
 
 ANDROID_MARKERS = {
