@@ -53,14 +53,12 @@ python -m pip install -e ".[dev]"
 bluekitchen --help
 bluekitchen inspect-payload /path/to/payload.bin
 bluekitchen inspect-image /path/to/system.img
-bluekitchen inspect-image /path/to/system.img
 ```
 
 To get machine-readable output, add `--json`:
 
 ```bash
 bluekitchen inspect-payload payload.bin --json
-bluekitchen inspect-image system.img --json
 bluekitchen inspect-image system.img --json
 ```
 
