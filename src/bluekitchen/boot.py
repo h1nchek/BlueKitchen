@@ -71,10 +71,7 @@ def inspect_boot_image(path: str | Path) -> dict[str, Any]:
             magic = _read_at(stream, 0, 8, "boot image magic")
             if magic != BOOT_MAGIC:
                 if magic == VENDOR_BOOT_MAGIC:
-                    raise BootImageError(
-                        "This is a vendor_boot image; vendor_boot parsing is not "
-                        "implemented yet"
-                    )
+                    return inspect_vendor_boot_image(image_path)
                 raise BootImageError("Invalid boot image magic; expected ANDROID!")
 
             version = struct.unpack("<I", _read_at(stream, 40, 4, "header version"))[0]
