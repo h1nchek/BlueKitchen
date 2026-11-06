@@ -6,18 +6,20 @@ import argparse
 import json
 import queue
 import threading
+from collections.abc import Callable
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
-from typing import Any, Callable
+from typing import Any
 
 from bluekitchen import __version__
-from bluekitchen.boot import inspect_boot_image
-from bluekitchen.dynamic_partitions import inspect_super_image
-from bluekitchen.extractor import extract_zip
-from bluekitchen.image import expand_sparse_image, inspect_image
-from bluekitchen.inspector import inspect_zip
-from bluekitchen.payload import inspect_payload
+from bluekitchen.boot import BootImageError, inspect_boot_image
+from bluekitchen.dynamic_partitions import SuperImageError, inspect_super_image
+from bluekitchen.extractor import ExtractionError, extract_zip
+from bluekitchen.image import ImageError, expand_sparse_image, inspect_image
+from bluekitchen.inspector import InspectionError, inspect_zip
+from bluekitchen.payload import PayloadError, inspect_payload
+from bluekitchen.super_extract import SuperExtractError, extract_super_partition
 
 
 OPERATIONS: dict[str, tuple[str, bool]] = {
@@ -153,13 +155,19 @@ class BlueKitchenApp:
                     "expand": expand_sparse_image,
                     "boot": inspect_boot_image,
                     "super": inspect_super_image,
+                "super-extract": extract_super_partition,
                 }
-                if needs_output:
+                if key == "super-extract":
+                    result = functions[key](source, self.partition_name.get(), destination)
+                elif needs_output:
                     result = functions[key](source, destination)
                 else:
                     result = functions[key](source)
                 self.results.put((True, result))
-            except Exception as exc:  # show domain and filesystem errors in the report
+            except (
+                OSError, ValueError, RuntimeError, BootImageError, SuperImageError,
+                ExtractionError, ImageError, InspectionError, PayloadError, SuperExtractError,
+            ) as exc:
                 self.results.put((False, str(exc)))
 
         threading.Thread(target=worker, daemon=True).start()
