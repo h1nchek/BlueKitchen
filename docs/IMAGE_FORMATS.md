@@ -33,3 +33,17 @@ Files without the sparse magic are reported as `raw_or_unknown_image`. This is n
 - No image is sent to a connected device.
 
 The sparse header and chunk definitions are based on the Android Open Source Project's `libsparse/sparse_format.h`: https://android.googlesource.com/platform/system/core/+/HEAD/libsparse/sparse_format.h
+
+
+## Android boot images
+
+The `inspect-boot` command reads Android boot image headers v0-v4 and reports header metadata and the byte ranges of kernel, ramdisk, optional second-stage, recovery DTBO, DTB, and v4 boot-signature sections where present.
+
+```bash
+bluekitchen inspect-boot boot.img
+bluekitchen inspect-boot boot.img --json
+```
+
+The parser validates declared header sizes, page sizes, section bounds, and supported header versions. It does not extract, decompress, modify, repack, verify AVB, or establish device compatibility. Vendor boot images (`VNDRBOOT`) are identified but not parsed yet.
+
+Format references: [AOSP boot image header documentation](https://source.android.com/docs/core/architecture/bootloader/boot-image-header) and [AOSP bootimg.h](https://android.googlesource.com/platform/system/tools/mkbootimg/+/refs/heads/android17-release/include/bootimg/bootimg.h).
