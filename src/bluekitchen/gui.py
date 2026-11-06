@@ -30,6 +30,7 @@ OPERATIONS: dict[str, tuple[str, bool]] = {
     "Expand sparse image": ("expand", True),
     "Inspect boot / vendor_boot": ("boot", False),
     "Inspect super image": ("super", False),
+    "Extract super partition": ("super-extract", True),
 }
 
 
@@ -55,6 +56,7 @@ class BlueKitchenApp:
         self.operation = tk.StringVar(value="Inspect ROM ZIP")
         self.input_path = tk.StringVar()
         self.output_path = tk.StringVar()
+        self.partition_name = tk.StringVar()
 
         ttk.Label(controls, text="Task").grid(row=0, column=0, sticky="w", padx=(0, 8), pady=4)
         self.operation_box = ttk.Combobox(
@@ -67,14 +69,16 @@ class BlueKitchenApp:
         ttk.Entry(controls, textvariable=self.input_path).grid(row=1, column=1, sticky="ew", pady=4)
         ttk.Button(controls, text="Browse…", command=self._browse_input).grid(row=1, column=2, padx=(8, 0))
 
+        self.partition_label = ttk.Label(controls, text="Partition name")
+        self.partition_entry = ttk.Entry(controls, textvariable=self.partition_name)
         self.output_label = ttk.Label(controls, text="Output")
         self.output_entry = ttk.Entry(controls, textvariable=self.output_path)
         self.output_button = ttk.Button(controls, text="Choose…", command=self._browse_output)
 
         self.run_button = ttk.Button(controls, text="Run", command=self._run)
-        self.run_button.grid(row=3, column=1, sticky="w", pady=(10, 0))
+        self.run_button.grid(row=4, column=1, sticky="w", pady=(10, 0))
         self.save_button = ttk.Button(controls, text="Save report…", command=self._save_report)
-        self.save_button.grid(row=3, column=2, sticky="e", padx=(8, 0), pady=(10, 0))
+        self.save_button.grid(row=4, column=2, sticky="e", padx=(8, 0), pady=(10, 0))
         controls.columnconfigure(1, weight=1)
 
         report_frame = ttk.LabelFrame(container, text="Report", padding=8)
@@ -90,11 +94,17 @@ class BlueKitchenApp:
         self._update_output_visibility()
 
     def _update_output_visibility(self, _event: object | None = None) -> None:
-        _key, needs_output = OPERATIONS[self.operation.get()]
+        key, needs_output = OPERATIONS[self.operation.get()]
+        if key == "super-extract":
+            self.partition_label.grid(row=2, column=0, sticky="w", padx=(0, 8), pady=4)
+            self.partition_entry.grid(row=2, column=1, columnspan=2, sticky="ew", pady=4)
+        else:
+            self.partition_label.grid_remove()
+            self.partition_entry.grid_remove()
         if needs_output:
-            self.output_label.grid(row=2, column=0, sticky="w", padx=(0, 8), pady=4)
-            self.output_entry.grid(row=2, column=1, sticky="ew", pady=4)
-            self.output_button.grid(row=2, column=2, padx=(8, 0))
+            self.output_label.grid(row=3, column=0, sticky="w", padx=(0, 8), pady=4)
+            self.output_entry.grid(row=3, column=1, sticky="ew", pady=4)
+            self.output_button.grid(row=3, column=2, padx=(8, 0))
         else:
             self.output_label.grid_remove()
             self.output_entry.grid_remove()
@@ -110,6 +120,8 @@ class BlueKitchenApp:
                     self.output_path.set(str(source.with_suffix("")) + "-unpacked")
                 elif OPERATIONS[self.operation.get()][0] == "expand":
                     self.output_path.set(str(source.with_suffix("")) + ".raw")
+                elif OPERATIONS[self.operation.get()][0] == "super-extract":
+                    self.output_path.set(str(source.with_suffix("")) + "-partition.img")
 
     def _browse_output(self) -> None:
         key, _needs_output = OPERATIONS[self.operation.get()]
@@ -140,6 +152,10 @@ class BlueKitchenApp:
         if needs_output and not destination:
             messagebox.showwarning("BlueKitchen", "Choose an output path first.")
             return
+        partition = self.partition_name.get().strip()
+        if key == "super-extract" and not partition:
+            messagebox.showwarning("BlueKitchen", "Enter the logical partition name first.")
+            return
 
         self.run_button.configure(state="disabled")
         self.status.set("Working…")
@@ -155,10 +171,10 @@ class BlueKitchenApp:
                     "expand": expand_sparse_image,
                     "boot": inspect_boot_image,
                     "super": inspect_super_image,
-                "super-extract": extract_super_partition,
+                    "super-extract": extract_super_partition,
                 }
                 if key == "super-extract":
-                    result = functions[key](source, self.partition_name.get(), destination)
+                    result = functions[key](source, partition, destination)
                 elif needs_output:
                     result = functions[key](source, destination)
                 else:
