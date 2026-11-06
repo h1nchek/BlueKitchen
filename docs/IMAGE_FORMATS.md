@@ -58,3 +58,17 @@ bluekitchen expand-sparse system.img system.raw
 ```
 
 The command validates the complete sparse chunk layout before creating the output. It processes RAW, FILL, DONT_CARE, and CRC32 chunks in a streaming manner. DONT_CARE ranges are represented as zero-filled holes where the filesystem supports sparse files. The source is never modified, and an existing destination is never overwritten. The output can be as large as the expanded image size, so check available disk space first.
+
+
+## Dynamic partitions and super images
+
+The `inspect-super` command reads Android liblp metadata from a **raw** `super.img` and reports metadata slots, logical partitions, extents, partition groups, and block devices.
+
+```bash
+bluekitchen inspect-super super.raw
+bluekitchen inspect-super super.raw --slot 1 --json
+```
+
+Sparse super images must first be expanded with `expand-sparse`. The parser validates geometry, metadata-header and table SHA-256 checksums, table bounds, extent references, and metadata-area boundaries. It tries the primary metadata copy and then the backup copy for the selected slot. It does not modify the image, reconstruct logical partition images, or prove that a ROM is compatible with a device.
+
+Format references: [AOSP liblp metadata format](https://android.googlesource.com/platform/system/core/+/master/fs_mgr/liblp/include/liblp/metadata_format.h), [AOSP metadata reader](https://chromium.googlesource.com/aosp/platform/system/core/+/087796c31c8726b60c7471eaf0621da6100ef092/fs_mgr/liblp/reader.cpp), and [AOSP metadata offsets](https://android.googlesource.com/platform/system/core/+/f4cd54e51290e011bfbe9786368da42868d30844/fs_mgr/liblp/utility.cpp).
