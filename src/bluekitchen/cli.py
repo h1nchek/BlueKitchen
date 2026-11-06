@@ -12,6 +12,7 @@ from bluekitchen.boot import BootImageError, inspect_boot_image
 from bluekitchen.dynamic_partitions import SuperImageError, inspect_super_image
 from bluekitchen.image import ImageError, expand_sparse_image, inspect_image
 from bluekitchen.extractor import ExtractionError, extract_zip
+from bluekitchen.super_extract import SuperExtractError, extract_super_partition
 from bluekitchen.inspector import InspectionError, inspect_zip
 from bluekitchen.payload import PayloadError, inspect_payload
 
@@ -60,6 +61,15 @@ def build_parser() -> argparse.ArgumentParser:
     super_parser.add_argument("image", type=Path, help="Path to a raw super.img")
     super_parser.add_argument("--slot", type=int, default=0, help="Metadata slot number (default: 0)")
     super_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
+
+    super_extract_parser = commands.add_parser(
+        "extract-super",
+        help="Extract one logical partition from a raw super image into a new image file",
+    )
+    super_extract_parser.add_argument("image", type=Path, help="Path to a raw super.img")
+    super_extract_parser.add_argument("partition", help="Logical partition name, e.g. system_a")
+    super_extract_parser.add_argument("output", type=Path, help="New output image path")
+    super_extract_parser.add_argument("--slot", type=int, default=0, help="Metadata slot number")
 
     expand_parser = commands.add_parser(
         "expand-sparse", help="Expand a sparse image into a new raw image file"
@@ -179,6 +189,21 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Output: {result['output']}")
         print(f"Size: {result['expanded_size']} bytes")
         print(f"Chunks processed: {result['chunks_processed']}")
+        print("Source image was not modified; existing output files are never overwritten.")
+        return 0
+    if args.command == "extract-super":
+        try:
+            result = extract_super_partition(
+                args.image, args.partition, args.output, slot=args.slot
+            )
+        except SuperExtractError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+        print(f"Super image: {result['source']}")
+        print(f"Partition: {result['partition']}")
+        print(f"Output: {result['output']}")
+        print(f"Size: {result['size_bytes']} bytes")
+        print(f"Extents: {result['extent_count']}")
         print("Source image was not modified; existing output files are never overwritten.")
         return 0
     if args.command == "inspect-boot":
