@@ -178,8 +178,23 @@ jobs:
           pattern: bluekitchen-*
           path: release-assets
           merge-multiple: false
+      - name: Prepare uniquely named assets and checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          cp release-assets/bluekitchen-linux-x86_64/bluekitchen release/bluekitchen-linux-x86_64
+          cp release-assets/bluekitchen-linux-x86_64/bluekitchen-gui release/bluekitchen-gui-linux-x86_64
+          cp release-assets/bluekitchen-windows-x86_64/bluekitchen.exe release/bluekitchen-windows-x86_64.exe
+          cp release-assets/bluekitchen-windows-x86_64/bluekitchen-gui.exe release/bluekitchen-gui-windows-x86_64.exe
+          cp release-assets/bluekitchen-macos/bluekitchen release/bluekitchen-macos
+          cp release-assets/bluekitchen-macos/bluekitchen-gui release/bluekitchen-gui-macos
+          cp release-assets/bluekitchen-installer-linux-x86_64/*.deb release/
+          cp release-assets/bluekitchen-installer-windows-x86_64/*.exe release/
+          cp release-assets/bluekitchen-installer-macos/*.pkg release/
+          (cd release && sha256sum * > SHA256SUMS.txt)
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: release-assets/**/*
+          files: release/*
           generate_release_notes: true
