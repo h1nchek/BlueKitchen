@@ -4,7 +4,7 @@
 
 BlueKitchen is an open-source toolkit focused on making Android ROM work more understandable and repeatable. It starts with a cross-platform Python CLI and is designed to grow into a modular toolkit with optional graphical interfaces.
 
-> **Project status:** Early development. Read-only ZIP inspection and Android OTA payload metadata inspection are implemented. Firmware modification and image-writing features are not yet implemented.
+> **Project status:** Early development. Read-only ZIP inspection, Android OTA payload metadata inspection, and Android sparse-image inspection are implemented. Firmware modification and image-writing features are not yet implemented.
 
 ## Goals
 
@@ -22,7 +22,7 @@ BlueKitchen is an open-source toolkit focused on making Android ROM work more un
 | CLI core | Python package, command entry point, JSON output | Implemented (initial) |
 | ROM inspector | Read-only ZIP listing and Android marker detection | Implemented (initial) |
 | Payload analyzer | CrAU header and protobuf manifest summary; partition operation counts | Implemented (initial) |
-| Image tools | Android sparse images and partition images | Planned |
+| Image tools | Android sparse-image metadata and chunk inspection; raw/unknown image identification | Implemented (initial) |
 | Boot image tools | Inspect boot and vendor boot metadata | Planned |
 | Compatibility checks | Validate device configuration and manifests | Planned |
 | GUI | Optional desktop interface | Planned |
@@ -50,13 +50,13 @@ Linux:
 source .venv/bin/activate
 python -m pip install -e ".[dev]"
 bluekitchen --help
-bluekitchen inspect-payload /path/to/payload.bin
+bluekitchen inspect-payload /path/to/payload.bin\nbluekitchen inspect-image /path/to/system.img
 ```
 
 To get machine-readable output, add `--json`:
 
 ```bash
-bluekitchen inspect-payload payload.bin --json
+bluekitchen inspect-payload payload.bin --json\nbluekitchen inspect-image system.img --json
 ```
 
 ## Development
