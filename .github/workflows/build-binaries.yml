@@ -2,8 +2,6 @@ name: Build binaries and installers
 
 on:
   push:
-    branches:
-      - main
     tags:
       - "v*"
   workflow_dispatch:
