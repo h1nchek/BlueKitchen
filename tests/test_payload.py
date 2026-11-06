@@ -34,10 +34,10 @@ def test_inspect_payload_v2_with_partition_operations(tmp_path):
     zero_operation = _varint_field(1, 6)
     partition = (
         _bytes_field(1, b"system")
-        + _bytes_field(2, replace_operation)
-        + _bytes_field(2, zero_operation)
+        + _bytes_field(8, replace_operation)
+        + _bytes_field(8, zero_operation)
     )
-    manifest = _varint_field(1, 4096) + _bytes_field(5, partition)
+    manifest = _varint_field(3, 4096) + _bytes_field(13, partition)
     payload_file = tmp_path / "payload.bin"
     payload_file.write_bytes(_make_payload(manifest))
 
@@ -54,7 +54,7 @@ def test_inspect_payload_v2_with_partition_operations(tmp_path):
 
 
 def test_inspect_payload_v1_without_signature_size(tmp_path):
-    manifest = _varint_field(1, 4096)
+    manifest = _varint_field(3, 4096)
     payload_file = tmp_path / "payload.bin"
     payload_file.write_bytes(_make_payload(manifest, version=1))
 
