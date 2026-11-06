@@ -65,6 +65,7 @@ Linux and macOS:
 | expand-sparse system.img system.raw | Expand a sparse image without overwriting existing files |
 | inspect-boot boot.img | Inspect boot or vendor_boot metadata |
 | inspect-super super.raw --slot 0 | Inspect liblp metadata in a raw super image |
+| extract-super super.raw system_a system.img --slot 0 | Extract a logical partition from raw super.img |
 
 Add --json to supported inspection commands for machine-readable output.
 
