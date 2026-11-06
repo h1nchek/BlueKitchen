@@ -1,0 +1,61 @@
+name: Build binaries
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: linux-x86_64
+            binary: dist/bluekitchen
+          - os: windows-latest
+            artifact: windows-x86_64
+            binary: dist/bluekitchen.exe
+          - os: macos-latest
+            artifact: macos-arm64
+            binary: dist/bluekitchen
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install . "pyinstaller>=6,<7"
+      - name: Build standalone executable
+        run: >
+          pyinstaller
+          --noconfirm
+          --clean
+          --onefile
+          --console
+          --name bluekitchen
+          --paths src
+          src/bluekitchen/__main__.py
+      - name: Verify executable (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./${{ matrix.binary }} --version
+      - name: Verify executable (Unix)
+        if: runner.os != 'Windows'
+        run: ./${{ matrix.binary }} --version
+      - name: Upload executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: bluekitchen-${{ matrix.artifact }}
+          path: ${{ matrix.binary }}
+          if-no-files-found: error
+          retention-days: 30
