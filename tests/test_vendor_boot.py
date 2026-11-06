@@ -79,6 +79,7 @@ def test_reject_vendor_ramdisk_fragment_out_of_bounds(tmp_path):
     # The first table entry begins after the header, ramdisk and DTB page.
     table_offset = 4096 + 4096 + 4096
     struct.pack_into("<I", data, table_offset + 4, 999999)
+    image.write_bytes(data)
 
     with pytest.raises(BootImageError, match="exceeds ramdisk section"):
         inspect_vendor_boot_image(image)
