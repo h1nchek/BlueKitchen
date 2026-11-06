@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from bluekitchen import __version__
+from bluekitchen.boot import BootImageError, inspect_boot_image
 from bluekitchen.image import ImageError, inspect_image
 from bluekitchen.inspector import InspectionError, inspect_zip
 from bluekitchen.payload import PayloadError, inspect_payload
@@ -32,6 +33,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     image_parser.add_argument("image", type=Path, help="Path to an image file")
     image_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
+
+    boot_parser = commands.add_parser(
+        "inspect-boot", help="Inspect an Android boot.img header and section layout"
+    )
+    boot_parser.add_argument("image", type=Path, help="Path to boot.img")
+    boot_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
 
     payload_parser = commands.add_parser(
         "inspect-payload", help="Inspect an Android OTA payload.bin header and manifest"
@@ -94,6 +101,30 @@ def main(argv: list[str] | None = None) -> int:
             print("Format: raw or unknown (not an Android sparse image)")
             print(f"File size: {result['file_size']} bytes")
             print("Filesystem type was not determined.")
+        return 0
+    if args.command == "inspect-boot":
+        try:
+            result = inspect_boot_image(args.image)
+        except BootImageError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+
+        if args.json:
+            print(json.dumps(result, indent=2, ensure_ascii=False))
+        else:
+            print(f"Boot image: {result['file']}")
+            print(f"Header version: {result['header_version']}")
+            print(f"Header size: {result['header_size']} bytes")
+            print(f"Page size: {result['page_size']} bytes")
+            print(f"File size: {result['file_size']} bytes")
+            if result.get("board_name"):
+                print(f"Board: {result['board_name']}")
+            if result.get("kernel_cmdline"):
+                print(f"Kernel cmdline: {result['kernel_cmdline']}")
+            print("Sections:")
+            for section in result["sections"]:
+                print(f"  - {section['name']}: offset {section['offset']}, {section['size']} bytes")
+            print("Inspection only: image data was not extracted or modified.")
         return 0
     if args.command == "inspect-payload":
         try:
