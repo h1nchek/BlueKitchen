@@ -48,6 +48,7 @@ Linux:
 source .venv/bin/activate
 python -m pip install -e ".[dev]"
 bluekitchen --help
+bluekitchen inspect-payload /path/to/payload.bin
 ```
 
 ## Development
