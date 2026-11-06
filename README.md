@@ -20,7 +20,8 @@ BlueKitchen is an open-source toolkit focused on making Android ROM work more un
 | Module | Purpose | Status |
 | --- | --- | --- |
 | CLI core | Python package, command entry point, JSON output | Implemented (initial) |
-| ROM inspector | Read-only ZIP listing and Android marker detection | Implemented (initial) |\n| Payload analyzer | CrAU header and protobuf manifest summary; partition operation counts | Implemented (initial) |
+| ROM inspector | Read-only ZIP listing and Android marker detection | Implemented (initial) |
+| Payload analyzer | CrAU header and protobuf manifest summary; partition operation counts | Implemented (initial) |
 | Image tools | Android sparse images and partition images | Planned |
 | Boot image tools | Inspect boot and vendor boot metadata | Planned |
 | Compatibility checks | Validate device configuration and manifests | Planned |
@@ -39,7 +40,8 @@ Windows:
 ```powershell
 .venv\Scripts\Activate.ps1
 python -m pip install -e ".[dev]"
-bluekitchen --help\nbluekitchen inspect-payload /path/to/payload.bin\nbluekitchen inspect-payload path\\to\\payload.bin
+bluekitchen --help
+bluekitchen inspect-payload path\to\payload.bin
 ```
 
 Linux:
@@ -49,6 +51,12 @@ source .venv/bin/activate
 python -m pip install -e ".[dev]"
 bluekitchen --help
 bluekitchen inspect-payload /path/to/payload.bin
+```
+
+To get machine-readable output, add `--json`:
+
+```bash
+bluekitchen inspect-payload payload.bin --json
 ```
 
 ## Development
