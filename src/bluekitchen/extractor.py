@@ -60,8 +60,8 @@ def extract_zip(
                 path = PurePosixPath(normalized)
                 if not _safe_member_name(name) or not normalized:
                     raise ExtractionError(f"Unsafe archive path: {name!r}")
-                if path.parts and ":" in path.parts[0]:
-                    raise ExtractionError(f"Drive-qualified archive path: {name!r}")
+                if any(":" in part for part in path.parts):
+                    raise ExtractionError(f"Drive-qualified or stream path: {name!r}")
                 if normalized in seen:
                     raise ExtractionError(f"Duplicate archive path: {name!r}")
                 seen.add(normalized)
@@ -98,6 +98,9 @@ def extract_zip(
                             if not chunk:
                                 break
                             copied += len(chunk)
+                            actual_total_size += len(chunk)
+                            if actual_total_size > max_total_size:
+                                raise ExtractionError("Archive expanded beyond the total size limit")
                             if copied > max_file_size:
                                 raise ExtractionError(
                                     f"Entry expanded beyond the size limit: {member.filename!r}"
