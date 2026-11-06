@@ -4,7 +4,7 @@
 
 BlueKitchen is an open-source toolkit focused on making Android ROM work more understandable and repeatable. It starts with a cross-platform Python CLI and is designed to grow into a modular toolkit with optional graphical interfaces.
 
-> **Project status:** Early development. The initial foundation is being built; firmware modification and image-writing features are not yet implemented.
+> **Project status:** Early development. The first read-only ZIP inspection command and automated checks are implemented. Firmware modification and image-writing features are not yet implemented.
 
 ## Goals
 
@@ -19,8 +19,8 @@ BlueKitchen is an open-source toolkit focused on making Android ROM work more un
 
 | Module | Purpose | Status |
 | --- | --- | --- |
-| CLI core | Commands, configuration, logging, exit codes | In progress |
-| ROM inspector | ZIP listing and basic metadata report | Planned |
+| CLI core | Python package, command entry point, JSON output | Implemented (initial) |
+| ROM inspector | Read-only ZIP listing and Android marker detection | Implemented (initial) |
 | Image tools | Android sparse images and partition images | Planned |
 | Boot image tools | Inspect boot and vendor boot metadata | Planned |
 | Compatibility checks | Validate device configuration and manifests | Planned |
