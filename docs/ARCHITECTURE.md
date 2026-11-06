@@ -16,7 +16,7 @@ BlueKitchen separates the user interface from format-specific inspection logic.
 
 ## Current implementation
 
-The first release exposes the command: bluekitchen inspect-zip <archive>. It reads the ZIP central directory and reports archive sizes, entry counts, selected Android package markers, and suspicious member paths. It does not extract files.
+The CLI currently exposes two read-only inspectors. `bluekitchen inspect-zip <archive>` reads the ZIP central directory and reports archive sizes, entry counts, selected Android package markers, and suspicious member paths. `bluekitchen inspect-payload <payload.bin>` reads the CrAU header and parses the OTA protobuf manifest to summarize partition names and operation counts. Neither command extracts files or applies update operations.\n\nThe payload parser follows the field layout in the AOSP `update_metadata.proto` schema. It supports the legacy major-version-1 operation lists and the major-version-2 partition list. It does not validate payload signatures, apply data blobs, or establish device compatibility.
 
 The JSON output is intended as an integration point, but is not yet a versioned public schema.
 
