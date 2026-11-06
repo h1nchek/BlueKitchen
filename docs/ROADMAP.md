@@ -5,28 +5,31 @@ BlueKitchen is developed in small, verifiable stages. A roadmap item is not comp
 ## Phase 0 — Project foundation
 
 - [x] Python package and CLI entry point
-- [x] Read-only ZIP inspection
 - [x] JSON output for scripting
-- [x] Initial automated tests and CI
-- [ ] Windows and Linux CI verification
+- [x] Automated tests and CI
+- [x] Cross-platform executable build workflow
+- [x] Initial Windows, Linux and macOS installer workflows
 
 ## Phase 1 — ROM package analysis
 
+- [x] Read-only ZIP inspection and Android marker detection
+- [x] Bounded ZIP extraction with traversal, symlink and size-limit checks
 - [x] Parse Android OTA payload headers and manifest metadata (initial)
-- [ ] Identify common ROM package layouts
 - [x] Summarize payload partitions and install operation types (initial)
 - [ ] Inspect OTA metadata and updater configuration
-- [ ] Detect payload-based and recovery-style packages
-- [ ] Add bounded archive inspection and resource limits
+- [ ] Detect and report common ROM package layouts
 - [ ] Generate complete report directories
 
 ## Phase 2 — Android image metadata
 
-- [x] Detect and validate Android sparse image headers and chunk layout (initial)\n- [x] Expand sparse images to new raw files without overwriting inputs (initial)
-- [x] Parse liblp geometry, metadata slots, partitions, extents, groups and block devices in raw super images (initial)\n- [ ] Support liblp metadata parsing directly from sparse super images
-- [x] Inspect Android boot image headers v0-v4 and section boundaries (initial)\n- [x] Inspect vendor_boot v3/v4 headers and ramdisk fragment tables (initial)
-- [x] Document sparse-image support and current limitations
-- [ ] Document tool dependencies and supported image versions
+- [x] Detect and validate Android sparse image headers and chunk layout (initial)
+- [x] Expand sparse images to new raw files without overwriting inputs (initial)
+- [x] Parse liblp geometry, metadata slots, partitions, extents, groups and block devices in raw super images (initial)
+- [ ] Support liblp metadata parsing directly from sparse super images
+- [x] Inspect Android boot image headers v0-v4 and section boundaries (initial)
+- [x] Inspect vendor_boot v3/v4 headers and ramdisk fragment tables (initial)
+- [ ] Extract boot and vendor_boot sections with verified boundaries
+- [ ] Inspect common filesystem metadata in raw partition images
 
 ## Phase 3 — Device compatibility
 
@@ -36,13 +39,22 @@ BlueKitchen is developed in small, verifiable stages. A roadmap item is not comp
 
 ## Phase 4 — Desktop interface
 
-- [ ] Define stable core API
-- [ ] Prototype a PySide6 GUI
-- [ ] Keep CLI usable without GUI dependencies
+- [x] Initial cross-platform Tkinter GUI
+- [x] Run common inspection and extraction operations from the GUI
+- [x] Save JSON reports
+- [ ] Add richer project/workspace management
+
+## Phase 5 — Image preparation
+
+- [ ] Define format-specific write APIs and validation contracts
+- [ ] Add controlled image modification workflows
+- [ ] Add reproducible ZIP/OTA package construction
+- [ ] Add checksums and post-build verification
 
 ## Safety and quality gates
 
-- Inspection remains read-only by default.
-- No automatic extraction of untrusted archives.
-- No device flashing feature is planned for the initial releases.
+- Inspection is read-only.
+- Archive extraction is bounded and rejects unsafe paths.
+- Image expansion writes only to a new output path and preserves the source.
+- No device flashing feature is included.
 - Every format claim must be backed by tests or documented external-tool output.
