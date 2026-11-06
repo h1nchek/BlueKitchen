@@ -174,3 +174,80 @@ def inspect_image(path: str | Path) -> dict[str, Any]:
         raise
     except OSError as exc:
         raise ImageError(f"Could not read image: {exc}") from exc
+
+
+
+def expand_sparse_image(source: str | Path, destination: str | Path) -> dict[str, Any]:
+    """Expand a validated Android sparse image into a new raw image file.
+
+    The source is never modified. Existing destination files are never overwritten.
+    DONT_CARE ranges are represented as zero-filled sparse-file holes where supported.
+    """
+    source_path = Path(source)
+    destination_path = Path(destination)
+    if not source_path.is_file():
+        raise ImageError(f"File does not exist: {source_path}")
+    if source_path.resolve() == destination_path.resolve():
+        raise ImageError("Source and destination must be different files")
+    if destination_path.exists():
+        raise ImageError(f"Destination already exists: {destination_path}")
+
+    # Validate the complete chunk table and all declared boundaries before creating output.
+    summary = inspect_image(source_path)
+    if not summary["is_sparse"]:
+        raise ImageError("Input is not an Android sparse image")
+
+    try:
+        destination_path.parent.mkdir(parents=True, exist_ok=True)
+        with source_path.open("rb") as input_stream, destination_path.open("xb") as output_stream:
+            input_stream.seek(summary["file_header_size"])
+            for index in range(summary["total_chunks"]):
+                chunk_header = _read_exact(
+                    input_stream, summary["chunk_header_size"], f"chunk {index} header"
+                )
+                chunk_type, _reserved, chunk_blocks, total_size = CHUNK_HEADER.unpack(
+                    chunk_header[: CHUNK_HEADER.size]
+                )
+                payload_size = total_size - summary["chunk_header_size"]
+                output_size = chunk_blocks * summary["block_size"]
+
+                if chunk_type == 0xCAC1:  # RAW
+                    remaining = payload_size
+                    while remaining:
+                        piece = _read_exact(
+                            input_stream, min(1024 * 1024, remaining), f"RAW chunk {index}"
+                        )
+                        output_stream.write(piece)
+                        remaining -= len(piece)
+                elif chunk_type == 0xCAC2:  # FILL
+                    pattern = _read_exact(input_stream, 4, f"FILL chunk {index}")
+                    remaining = output_size
+                    block = pattern * (min(1024 * 1024, max(4, output_size)) // 4)
+                    while remaining:
+                        piece = block[: min(len(block), remaining)]
+                        output_stream.write(piece)
+                        remaining -= len(piece)
+                elif chunk_type == 0xCAC3:  # DONT_CARE
+                    output_stream.seek(output_size, 1)
+                elif chunk_type == 0xCAC4:  # CRC32
+                    _read_exact(input_stream, payload_size, f"CRC32 chunk {index}")
+                else:
+                    raise ImageError(f"Unsupported sparse chunk type 0x{chunk_type:04x}")
+
+            output_stream.truncate(summary["expanded_size"])
+            output_stream.flush()
+        return {
+            "source": source_path.name,
+            "output": str(destination_path),
+            "expanded_size": summary["expanded_size"],
+            "chunks_processed": summary["total_chunks"],
+            "source_preserved": True,
+        }
+    except (OSError, ImageError) as exc:
+        try:
+            destination_path.unlink(missing_ok=True)
+        except OSError:
+            pass
+        if isinstance(exc, ImageError):
+            raise
+        raise ImageError(f"Could not expand sparse image: {exc}") from exc
