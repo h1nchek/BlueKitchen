@@ -2,6 +2,8 @@ name: Build binaries and installers
 
 on:
   push:
+    branches:
+      - main
     tags:
       - "v*"
   workflow_dispatch:
@@ -89,7 +91,7 @@ jobs:
           from pathlib import Path
           version = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
-              output.write(f"version={version}\\n")
+              output.write("version=" + version + "\n")
           PY
       - name: Download platform executable
         uses: actions/download-artifact@v4
@@ -102,8 +104,8 @@ jobs:
         run: |
           choco install innosetup --no-progress -y
           New-Item -ItemType Directory -Force dist/installers | Out-Null
-          $iscc = "${env:ProgramFiles(x86)}\\Inno Setup 6\\ISCC.exe"
-          & $iscc "/DAppVersion=${{ steps.version.outputs.version }}" "/Odist\\installers" "packaging\\windows\\bluekitchen.iss"
+          $iscc = Join-Path "${env:ProgramFiles(x86)}" "Inno Setup 6\ISCC.exe"
+          & $iscc "/DAppVersion=${{ steps.version.outputs.version }}" "/Odist\installers" "packaging\windows\bluekitchen.iss"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Build Linux deb package
         if: runner.os == 'Linux'
