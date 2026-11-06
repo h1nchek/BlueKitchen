@@ -76,7 +76,7 @@ Run lint checks:
 python -m ruff check .
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines, [docs/ROADMAP.md](docs/ROADMAP.md) for planned work, and [docs/IMAGE_FORMATS.md](docs/IMAGE_FORMATS.md) for image-format support and limitations.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines, [docs/ROADMAP.md](docs/ROADMAP.md) for planned work, [docs/IMAGE_FORMATS.md](docs/IMAGE_FORMATS.md) for image-format support, and [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md) for standalone Windows, Linux, and macOS builds.
 
 ## Design principles
 
