@@ -81,6 +81,7 @@ def extract_zip(
             extracted_files = 0
             try:
                 root = target.resolve()
+                actual_total_size = 0
                 for member in members:
                     relative = PurePosixPath(member.filename.replace("\\", "/"))
                     output = target.joinpath(*relative.parts)
