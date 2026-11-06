@@ -197,9 +197,11 @@ def expand_sparse_image(source: str | Path, destination: str | Path) -> dict[str
     if not summary["is_sparse"]:
         raise ImageError("Input is not an Android sparse image")
 
+    created_output = False
     try:
         destination_path.parent.mkdir(parents=True, exist_ok=True)
         with source_path.open("rb") as input_stream, destination_path.open("xb") as output_stream:
+            created_output = True
             input_stream.seek(summary["file_header_size"])
             for index in range(summary["total_chunks"]):
                 chunk_header = _read_exact(
@@ -244,10 +246,11 @@ def expand_sparse_image(source: str | Path, destination: str | Path) -> dict[str
             "source_preserved": True,
         }
     except (OSError, ImageError) as exc:
-        try:
-            destination_path.unlink(missing_ok=True)
-        except OSError:
-            pass
+        if created_output:
+            try:
+                destination_path.unlink(missing_ok=True)
+            except OSError:
+                pass
         if isinstance(exc, ImageError):
             raise
         raise ImageError(f"Could not expand sparse image: {exc}") from exc
