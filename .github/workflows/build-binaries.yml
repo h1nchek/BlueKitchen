@@ -1,4 +1,4 @@
-name: Build binaries
+name: Build binaries and installers
 
 on:
   push:
@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   build:
-    name: Build on ${{ matrix.os }}
+    name: Build executable (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
@@ -62,13 +62,92 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  package:
+    name: Package installer (${{ matrix.os }})
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: linux-x86_64
+          - os: windows-latest
+            artifact: windows-x86_64
+          - os: macos-latest
+            artifact: macos
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Read package version
+        id: version
+        shell: python
+        run: |
+          import os, tomllib
+          from pathlib import Path
+          version = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"version={version}\\n")
+      - name: Download platform executable
+        uses: actions/download-artifact@v4
+        with:
+          name: bluekitchen-${{ matrix.artifact }}
+          path: dist
+      - name: Build Windows installer
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress -y
+          New-Item -ItemType Directory -Force dist/installers | Out-Null
+          $iscc = "${env:ProgramFiles(x86)}\\Inno Setup 6\\ISCC.exe"
+          & $iscc "/DAppVersion=${{ steps.version.outputs.version }}" "/Odist\\installers" "packaging\\windows\\bluekitchen.iss"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Build Linux deb package
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${{ steps.version.outputs.version }}"
+          root="dist/deb-root"
+          mkdir -p "$root/usr/bin" "$root/DEBIAN" dist/installers
+          install -m 0755 dist/bluekitchen "$root/usr/bin/bluekitchen"
+          cat > "$root/DEBIAN/control" <<EOF
+          Package: bluekitchen
+          Version: $version
+          Section: utils
+          Priority: optional
+          Architecture: amd64
+          Maintainer: BlueKitchen contributors
+          Description: Read-only Android ROM inspection toolkit
+           Inspect Android ROM archives, OTA payload metadata and sparse images.
+          EOF
+          dpkg-deb --build --root-owner-group "$root" "dist/installers/bluekitchen_${version}_amd64.deb"
+      - name: Build macOS package
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${{ steps.version.outputs.version }}"
+          mkdir -p dist/pkg-root dist/installers
+          install -m 0755 dist/bluekitchen dist/pkg-root/bluekitchen
+          pkgbuild --root dist/pkg-root --identifier org.bluekitchen.cli --version "$version" --install-location /usr/local/bin "dist/installers/BlueKitchen-${version}-macos.pkg"
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: bluekitchen-installer-${{ matrix.artifact }}
+          path: dist/installers/*
+          if-no-files-found: error
+          retention-days: 30
+
   release:
     name: Publish release assets
     if: startsWith(github.ref, 'refs/tags/')
-    needs: build
+    needs: package
     runs-on: ubuntu-latest
     steps:
-      - name: Download all platform binaries
+      - name: Download all platform binaries and installers
         uses: actions/download-artifact@v4
         with:
           pattern: bluekitchen-*
