@@ -20,7 +20,7 @@ BlueKitchen is developed in small, verifiable stages. A roadmap item is not comp
 
 ## Phase 2 — Android image metadata
 
-- [ ] Detect Android sparse images
+- [x] Detect and validate Android sparse image headers and chunk layout (initial)
 - [ ] Inspect super image metadata through optional external tools
 - [ ] Inspect boot and vendor_boot headers
 - [ ] Document tool dependencies and supported image versions
