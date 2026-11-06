@@ -215,3 +215,144 @@ def inspect_boot_image(path: str | Path) -> dict[str, Any]:
         raise BootImageError(f"Could not read boot image: {exc}") from exc
     except struct.error as exc:
         raise BootImageError(f"Malformed boot image header: {exc}") from exc
+
+
+
+VENDOR_RAMDISK_TYPES = {
+    0: "NONE",
+    1: "PLATFORM",
+    2: "RECOVERY",
+    3: "DLKM",
+}
+VENDOR_BOOT_V3_HEADER_SIZE = 2112
+VENDOR_BOOT_V4_HEADER_SIZE = 2128
+VENDOR_RAMDISK_ENTRY_SIZE = 108
+
+
+def inspect_vendor_boot_image(path: str | Path) -> dict[str, Any]:
+    """Inspect vendor_boot v3/v4 metadata and ramdisk fragment table."""
+    image_path = Path(path)
+    if not image_path.is_file():
+        raise BootImageError(f"File does not exist: {image_path}")
+
+    try:
+        file_size = image_path.stat().st_size
+        with image_path.open("rb") as stream:
+            magic = _read_at(stream, 0, 8, "vendor_boot magic")
+            if magic != VENDOR_BOOT_MAGIC:
+                raise BootImageError("Invalid vendor_boot magic; expected VNDRBOOT")
+
+            version, page_size, kernel_addr, ramdisk_addr, ramdisk_size = struct.unpack(
+                "<5I", _read_at(stream, 8, 20, "vendor_boot header")
+            )
+            if version not in (3, 4):
+                raise BootImageError(f"Unsupported vendor_boot header version: {version}")
+            minimum_header_size = (
+                VENDOR_BOOT_V4_HEADER_SIZE if version == 4 else VENDOR_BOOT_V3_HEADER_SIZE
+            )
+            if page_size < minimum_header_size or page_size > MAX_PAGE_SIZE:
+                raise BootImageError(f"Invalid vendor_boot page size: {page_size}")
+            if page_size & (page_size - 1):
+                raise BootImageError("vendor_boot page size must be a power of two")
+
+            cmdline = _c_string(_read_at(stream, 28, 2048, "vendor_boot command line"))
+            tags_addr = struct.unpack("<I", _read_at(stream, 2076, 4, "vendor_boot tags address"))[0]
+            name = _c_string(_read_at(stream, 2080, 16, "vendor_boot board name"))
+            header_size = struct.unpack("<I", _read_at(stream, 2096, 4, "vendor_boot header size"))[0]
+            dtb_size, dtb_addr = struct.unpack(
+                "<IQ", _read_at(stream, 2100, 12, "vendor_boot DTB fields")
+            )
+            if header_size < minimum_header_size or header_size > page_size:
+                raise BootImageError("Invalid declared vendor_boot header size")
+
+            sections = [
+                _check_section("vendor_ramdisk", page_size, ramdisk_size, file_size)
+            ]
+            dtb_offset = _align(page_size + ramdisk_size, page_size)
+            if dtb_size:
+                sections.append(_check_section("dtb", dtb_offset, dtb_size, file_size))
+
+            ramdisk_fragments = []
+            table_size = 0
+            bootconfig_size = 0
+            if version == 4:
+                (
+                    table_size,
+                    entry_count,
+                    entry_size,
+                    bootconfig_size,
+                ) = struct.unpack("<4I", _read_at(stream, 2112, 16, "vendor_boot v4 extension"))
+                if entry_size < VENDOR_RAMDISK_ENTRY_SIZE:
+                    raise BootImageError("Vendor ramdisk table entry size is too small")
+                if entry_count * entry_size > table_size:
+                    raise BootImageError("Vendor ramdisk table entries exceed declared table size")
+
+                table_offset = _align(dtb_offset + dtb_size, page_size)
+                if table_size:
+                    sections.append(
+                        _check_section("vendor_ramdisk_table", table_offset, table_size, file_size)
+                    )
+                stream.seek(table_offset)
+                for index in range(entry_count):
+                    entry = _read_at(
+                        stream,
+                        table_offset + index * entry_size,
+                        VENDOR_RAMDISK_ENTRY_SIZE,
+                        f"vendor ramdisk table entry {index}",
+                    )
+                    fragment_size, fragment_offset, fragment_type = struct.unpack(
+                        "<3I", entry[:12]
+                    )
+                    fragment_name = _c_string(entry[12:44])
+                    board_id = list(struct.unpack("<16I", entry[44:108]))
+                    if fragment_offset + fragment_size > ramdisk_size:
+                        raise BootImageError(
+                            f"Vendor ramdisk table entry {index} exceeds ramdisk section"
+                        )
+                    ramdisk_fragments.append({
+                        "name": fragment_name,
+                        "type": VENDOR_RAMDISK_TYPES.get(
+                            fragment_type, f"UNKNOWN_{fragment_type}"
+                        ),
+                        "size": fragment_size,
+                        "offset": fragment_offset,
+                        "board_id": board_id,
+                    })
+
+                bootconfig_offset = _align(table_offset + table_size, page_size)
+                if bootconfig_size:
+                    sections.append(
+                        _check_section(
+                            "bootconfig", bootconfig_offset, bootconfig_size, file_size
+                        )
+                    )
+
+        return {
+            "file": image_path.name,
+            "format": "android_vendor_boot_image",
+            "magic": VENDOR_BOOT_MAGIC.decode("ascii"),
+            "header_version": version,
+            "header_size": header_size,
+            "page_size": page_size,
+            "file_size": file_size,
+            "kernel_address": kernel_addr,
+            "ramdisk_address": ramdisk_addr,
+            "tags_address": tags_addr,
+            "board_name": name,
+            "kernel_cmdline": cmdline,
+            "vendor_ramdisk_size": ramdisk_size,
+            "dtb_size": dtb_size,
+            "dtb_address": dtb_addr,
+            "vendor_ramdisk_table_size": table_size,
+            "vendor_ramdisk_fragment_count": len(ramdisk_fragments),
+            "vendor_ramdisk_fragments": ramdisk_fragments,
+            "bootconfig_size": bootconfig_size,
+            "sections": sections,
+            "inspection_only": True,
+        }
+    except BootImageError:
+        raise
+    except OSError as exc:
+        raise BootImageError(f"Could not read vendor_boot image: {exc}") from exc
+    except struct.error as exc:
+        raise BootImageError(f"Malformed vendor_boot header: {exc}") from exc
