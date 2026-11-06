@@ -113,7 +113,7 @@ def extract_super_partition(
             "slot": slot,
             "source_preserved": True,
         }
-    except (OSError, ValueError, KeyError, TypeError, RuntimeError) as exc:
+    except (SuperExtractError, OSError, ValueError, KeyError, TypeError, RuntimeError) as exc:
         if created or target.exists():
             try:
                 target.unlink(missing_ok=True)
