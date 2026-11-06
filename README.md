@@ -2,81 +2,85 @@
 
 **A modular Android ROM kitchen for inspecting, analyzing, and preparing Android firmware.**
 
-BlueKitchen is an open-source toolkit focused on making Android ROM work more understandable and repeatable. It starts with a cross-platform Python CLI and is designed to grow into a modular toolkit with optional graphical interfaces.
+BlueKitchen is an open-source toolkit focused on making Android ROM work more understandable and repeatable. It provides a cross-platform Python CLI and a lightweight desktop interface.
 
-> **Project status:** Early development. Read-only ZIP inspection, Android OTA payload metadata inspection, and Android sparse-image inspection and expansion, Android boot/vendor_boot metadata inspection, and raw super metadata inspection are implemented. Firmware modification and image-writing features are not yet implemented.
+> **Project status:** Active development. ZIP inspection and bounded extraction, Android OTA payload metadata inspection, sparse-image inspection and expansion, boot/vendor_boot metadata inspection, and raw super metadata inspection are implemented. The project does not currently patch firmware, apply OTA payload operations, rebuild Android images, or flash devices.
 
 ## Goals
 
-- Inspect ROM archives without modifying the source files.
-- Produce clear, machine-readable reports about archive contents.
+- Inspect ROM archives without modifying source files.
+- Safely extract ROM ZIP contents with path and size limits.
+- Produce clear, machine-readable reports about archive and image metadata.
 - Add dedicated backends for Android image formats and boot-related images.
 - Validate device configuration files and highlight missing or inconsistent metadata.
 - Keep operations explicit, testable, and safe by default.
-- Support Windows and Linux where the underlying tools allow it.
+- Support Windows, Linux, and macOS where the underlying tools allow it.
 
-## Planned modules
+## Modules
 
 | Module | Purpose | Status |
 | --- | --- | --- |
-| CLI core | Python package, command entry point, JSON output | Implemented (initial) |
-| ROM inspector | Read-only ZIP listing and Android marker detection | Implemented (initial) |
+| CLI core | Python package, command entry point, JSON output | Implemented |
+| Desktop GUI | Tkinter interface for common inspection and extraction tasks | Implemented (initial) |
+| ROM inspector | Read-only ZIP listing and Android marker detection | Implemented |
+| ZIP extraction | Bounded extraction into a new directory; rejects unsafe paths and symlinks | Implemented |
 | Payload analyzer | CrAU header and protobuf manifest summary; partition operation counts | Implemented (initial) |
-| Image tools | Android sparse-image inspection and expansion to raw images | Implemented (initial) |\n| Dynamic partitions | Read-only liblp metadata inspection for raw super images | Implemented (initial) |\n| Boot image tools | Read-only Android boot and vendor_boot v0-v4 metadata, section layout, and vendor ramdisk fragment table inspection | Implemented (initial) |
-| Boot image tools | Inspect boot and vendor boot metadata | Planned |
+| Image tools | Android sparse-image inspection and expansion to raw images | Implemented (initial) |
+| Dynamic partitions | Read-only liblp metadata inspection for raw super images | Implemented (initial) |
+| Boot image tools | Read-only Android boot and vendor_boot v0-v4 metadata and section inspection | Implemented (initial) |
 | Compatibility checks | Validate device configuration and manifests | Planned |
-| GUI | Optional desktop interface | Planned |
+| Image rebuilding | Modify and rebuild supported Android image formats | Planned |
+| OTA construction | Build OTA packages from validated inputs | Planned |
 
 ## Quick start
 
-BlueKitchen currently targets Python 3.10 or newer.
+BlueKitchen targets Python 3.10 or newer.
 
-```bash
-python -m venv .venv
-```
+Install from source:
+
+    python -m venv .venv
 
 Windows:
 
-```powershell
-.venv\Scripts\Activate.ps1
-python -m pip install -e ".[dev]"
-bluekitchen --help
-bluekitchen inspect-payload path\to\payload.bin
-bluekitchen inspect-image path\to\system.img
-```
+    .venv\Scripts\Activate.ps1
+    python -m pip install -e ".[dev]"
+    bluekitchen --help
+    bluekitchen-gui
 
-Linux:
+Linux and macOS:
 
-```bash
-source .venv/bin/activate
-python -m pip install -e ".[dev]"
-bluekitchen --help
-bluekitchen inspect-payload /path/to/payload.bin
-bluekitchen inspect-image /path/to/system.img\nbluekitchen expand-sparse /path/to/system.img /path/to/system.raw\nbluekitchen inspect-boot /path/to/boot.img\nbluekitchen inspect-super /path/to/super.raw --slot 0
-```
+    source .venv/bin/activate
+    python -m pip install -e ".[dev]"
+    bluekitchen --help
+    bluekitchen-gui
 
-To get machine-readable output, add `--json`:
+## CLI commands
 
-```bash
-bluekitchen inspect-payload payload.bin --json
-bluekitchen inspect-image system.img --json\nbluekitchen inspect-boot boot.img --json
-```
+| Command | Description |
+| --- | --- |
+| inspect-zip ROM.zip | List ZIP contents and identify Android markers |
+| extract-zip ROM.zip output/ | Extract into a new directory with safety limits |
+| inspect-payload payload.bin | Parse OTA payload header and manifest |
+| inspect-image system.img | Inspect Android sparse image structure or identify a raw image |
+| expand-sparse system.img system.raw | Expand a sparse image without overwriting existing files |
+| inspect-boot boot.img | Inspect boot or vendor_boot metadata |
+| inspect-super super.raw --slot 0 | Inspect liblp metadata in a raw super image |
+
+Add --json to supported inspection commands for machine-readable output.
+
+ZIP extraction is limited by default to 10,000 entries, 512 MiB per file, and 2 GiB total uncompressed data. The destination directory must not already exist. Limits can be adjusted with --max-entries, --max-file-size, and --max-total-size.
 
 ## Development
 
 Run tests:
 
-```bash
-python -m pytest
-```
+    python -m pytest
 
 Run lint checks:
 
-```bash
-python -m ruff check .
-```
+    python -m ruff check .
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines, [docs/ROADMAP.md](docs/ROADMAP.md) for planned work, [docs/IMAGE_FORMATS.md](docs/IMAGE_FORMATS.md) for image-format support, and [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md) for standalone Windows, Linux, and macOS builds.
+See CONTRIBUTING.md for development guidelines, docs/ROADMAP.md for planned work, docs/IMAGE_FORMATS.md for image-format support, and docs/DISTRIBUTION.md for standalone builds and installers.
 
 ## Design principles
 
@@ -92,4 +96,4 @@ BlueKitchen is an experimental firmware-analysis and development toolkit. Androi
 
 ## License
 
-BlueKitchen is licensed under the **GNU General Public License v3.0 or later**. See [LICENSE](LICENSE).
+BlueKitchen is licensed under the **GNU General Public License v3.0 or later**. See LICENSE.
