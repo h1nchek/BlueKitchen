@@ -23,11 +23,11 @@ SolidCompression=yes
 
 [Files]
 Source: "..\..\dist\bluekitchen.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\\..\\dist\\bluekitchen-gui.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\dist\bluekitchen-gui.exe"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\BlueKitchen command-line tool"; Filename: "{app}\{#MyAppExeName}"
-Name: "{group}\\BlueKitchen GUI"; Filename: "{app}\\bluekitchen-gui.exe"
+Name: "{group}\BlueKitchen GUI"; Filename: "{app}\bluekitchen-gui.exe"
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Parameters: "--help"; Description: "Show BlueKitchen command-line help"; Flags: postinstall skipifsilent
