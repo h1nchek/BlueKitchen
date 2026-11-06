@@ -12,8 +12,10 @@ BlueKitchen is developed in small, verifiable stages. A roadmap item is not comp
 
 ## Phase 1 — ROM package analysis
 
-- [x] Parse Android OTA payload headers and manifest metadata (initial)\n- [ ] Identify common ROM package layouts
-- [x] Summarize payload partitions and install operation types (initial)\n- [ ] Inspect OTA metadata and updater configuration
+- [x] Parse Android OTA payload headers and manifest metadata (initial)
+- [ ] Identify common ROM package layouts
+- [x] Summarize payload partitions and install operation types (initial)
+- [ ] Inspect OTA metadata and updater configuration
 - [ ] Detect payload-based and recovery-style packages
 - [ ] Add bounded archive inspection and resource limits
 - [ ] Generate complete report directories
@@ -23,6 +25,7 @@ BlueKitchen is developed in small, verifiable stages. A roadmap item is not comp
 - [x] Detect and validate Android sparse image headers and chunk layout (initial)
 - [ ] Inspect super image metadata through optional external tools
 - [ ] Inspect boot and vendor_boot headers
+- [x] Document sparse-image support and current limitations
 - [ ] Document tool dependencies and supported image versions
 
 ## Phase 3 — Device compatibility
