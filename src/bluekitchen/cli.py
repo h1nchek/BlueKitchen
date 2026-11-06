@@ -35,7 +35,7 @@ def build_parser() -> argparse.ArgumentParser:
     image_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
 
     boot_parser = commands.add_parser(
-        "inspect-boot", help="Inspect an Android boot.img header and section layout"
+        "inspect-boot", help="Inspect an Android boot or vendor_boot image header and section layout"
     )
     boot_parser.add_argument("image", type=Path, help="Path to boot.img")
     boot_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
