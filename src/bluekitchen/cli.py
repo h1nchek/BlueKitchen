@@ -15,6 +15,7 @@ from bluekitchen.extractor import ExtractionError, extract_zip
 from bluekitchen.super_extract import SuperExtractError, extract_super_partition
 from bluekitchen.inspector import InspectionError, inspect_zip
 from bluekitchen.payload import PayloadError, inspect_payload
+from bluekitchen.packer import PackingError, pack_zip
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -77,6 +78,12 @@ def build_parser() -> argparse.ArgumentParser:
     expand_parser.add_argument("image", type=Path, help="Sparse image to expand")
     expand_parser.add_argument("output", type=Path, help="New raw image output path")
 
+    pack_parser = commands.add_parser(
+        "pack-zip", help="Create a ROM ZIP from a prepared directory"
+    )
+    pack_parser.add_argument("directory", type=Path, help="Prepared ROM directory")
+    pack_parser.add_argument("output", type=Path, help="New output ZIP path")
+
     payload_parser = commands.add_parser(
         "inspect-payload", help="Inspect an Android OTA payload.bin header and manifest"
     )
@@ -129,6 +136,18 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Files extracted: {result['files_extracted']}")
         print(f"Uncompressed: {result['uncompressed_bytes']} bytes")
         print("Source archive was not modified; existing output directories are never overwritten.")
+        return 0
+    if args.command == "pack-zip":
+        try:
+            result = pack_zip(args.directory, args.output)
+        except PackingError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+        print(f"Source directory: {result['source_directory']}")
+        print(f"Archive: {result['archive']}")
+        print(f"Files packed: {result['files_packed']}")
+        print(f"Uncompressed: {result['uncompressed_bytes']} bytes")
+        print("Source directory was not modified; existing output files are never overwritten.")
         return 0
     if args.command == "inspect-image":
         try:
