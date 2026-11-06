@@ -17,6 +17,9 @@ dev = ["pytest>=8.0", "ruff>=0.5"]
 [project.scripts]
 bluekitchen = "bluekitchen.cli:main"
 
+[project.gui-scripts]
+bluekitchen-gui = "bluekitchen.gui:main"
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
