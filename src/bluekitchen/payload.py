@@ -24,12 +24,9 @@ OPERATION_NAMES = {
     5: "SOURCE_BSDIFF",
     6: "ZERO",
     7: "DISCARD",
-    8: "BROTLI_BSDIFF",
-    9: "ZUCCHINI",
-    10: "PUFFDIFF",
-    11: "LZ4DIFF_BSDIFF",
-    12: "LZ4DIFF_PUFFDIFF",
-    13: "REPLACE_XZ",
+    8: "REPLACE_XZ",
+    9: "PUFFDIFF",
+    10: "BROTLI_BSDIFF",
 }
 
 
@@ -98,27 +95,15 @@ def _first_varint(fields: list[tuple[int, int, Any]], number: int) -> int | None
 
 def _parse_manifest(manifest: bytes) -> dict[str, Any]:
     fields = list(_protobuf_fields(manifest))
-    block_size = _first_varint(fields, 1)
+    block_size = _first_varint(fields, 3)
+    minor_version = _first_varint(fields, 12) or 0
     partitions = []
     operation_totals: Counter[str] = Counter()
     unknown_operation_types: Counter[int] = Counter()
 
-    for field_number, wire_type, partition_blob in fields:
-        if field_number != 5 or wire_type != 2:
-            continue
-        partition_fields = list(_protobuf_fields(partition_blob))
-        name = next(
-            (
-                value.decode("utf-8", errors="replace")
-                for number, kind, value in partition_fields
-                if number == 1 and kind == 2
-            ),
-            None,
-        )
+    def count_operations(operation_blobs: list[bytes]) -> Counter[str]:
         operations: Counter[str] = Counter()
-        for number, kind, operation_blob in partition_fields:
-            if number != 2 or kind != 2:
-                continue
+        for operation_blob in operation_blobs:
             operation_fields = list(_protobuf_fields(operation_blob))
             operation_type = _first_varint(operation_fields, 1)
             if operation_type is None:
@@ -131,10 +116,48 @@ def _parse_manifest(manifest: bytes) -> dict[str, Any]:
                 unknown_operation_types[operation_type] += 1
             operations[label] += 1
             operation_totals[label] += 1
-        partitions.append({"name": name, "operation_count": sum(operations.values()), "operations": dict(sorted(operations.items()))})
+        return operations
+
+    for field_number, wire_type, partition_blob in fields:
+        if field_number != 13 or wire_type != 2:
+            continue
+        partition_fields = list(_protobuf_fields(partition_blob))
+        name = next(
+            (
+                value.decode("utf-8", errors="replace")
+                for number, kind, value in partition_fields
+                if number == 1 and kind == 2
+            ),
+            None,
+        )
+        operation_blobs = [
+            value for number, kind, value in partition_fields if number == 8 and kind == 2
+        ]
+        operations = count_operations(operation_blobs)
+        partitions.append({
+            "name": name,
+            "operation_count": sum(operations.values()),
+            "operations": dict(sorted(operations.items())),
+        })
+
+    # Major version 1 uses manifest-level operation lists instead of PartitionUpdate.
+    if not partitions:
+        for field_number, name in ((1, "rootfs"), (2, "kernel")):
+            operation_blobs = [
+                value for number, kind, value in fields
+                if number == field_number and kind == 2
+            ]
+            if operation_blobs:
+                operations = count_operations(operation_blobs)
+                partitions.append({
+                    "name": name,
+                    "operation_count": sum(operations.values()),
+                    "operations": dict(sorted(operations.items())),
+                })
 
     return {
-        "block_size": block_size,
+        "block_size": block_size if block_size is not None else 4096,
+        "minor_version": minor_version,
         "partition_count": len(partitions),
         "partitions": partitions,
         "operation_count": sum(operation_totals.values()),
