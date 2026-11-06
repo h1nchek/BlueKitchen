@@ -42,6 +42,7 @@ Windows:
 python -m pip install -e ".[dev]"
 bluekitchen --help
 bluekitchen inspect-payload path\to\payload.bin
+bluekitchen inspect-image path\to\system.img
 ```
 
 Linux:
@@ -50,13 +51,17 @@ Linux:
 source .venv/bin/activate
 python -m pip install -e ".[dev]"
 bluekitchen --help
-bluekitchen inspect-payload /path/to/payload.bin\nbluekitchen inspect-image /path/to/system.img
+bluekitchen inspect-payload /path/to/payload.bin
+bluekitchen inspect-image /path/to/system.img
+bluekitchen inspect-image /path/to/system.img
 ```
 
 To get machine-readable output, add `--json`:
 
 ```bash
-bluekitchen inspect-payload payload.bin --json\nbluekitchen inspect-image system.img --json
+bluekitchen inspect-payload payload.bin --json
+bluekitchen inspect-image system.img --json
+bluekitchen inspect-image system.img --json
 ```
 
 ## Development
@@ -73,7 +78,7 @@ Run lint checks:
 python -m ruff check .
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines and [docs/ROADMAP.md](docs/ROADMAP.md) for planned work.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines, [docs/ROADMAP.md](docs/ROADMAP.md) for planned work, and [docs/IMAGE_FORMATS.md](docs/IMAGE_FORMATS.md) for image-format support and limitations.
 
 ## Design principles
 
