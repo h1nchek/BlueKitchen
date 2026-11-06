@@ -11,6 +11,7 @@ from bluekitchen import __version__
 from bluekitchen.boot import BootImageError, inspect_boot_image
 from bluekitchen.dynamic_partitions import SuperImageError, inspect_super_image
 from bluekitchen.image import ImageError, expand_sparse_image, inspect_image
+from bluekitchen.extractor import ExtractionError, extract_zip
 from bluekitchen.inspector import InspectionError, inspect_zip
 from bluekitchen.payload import PayloadError, inspect_payload
 
@@ -28,6 +29,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     inspect_parser.add_argument("archive", type=Path, help="Path to the ROM ZIP")
     inspect_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
+
+    extract_parser = commands.add_parser(
+        "extract-zip", help="Safely extract a ROM ZIP into a new directory"
+    )
+    extract_parser.add_argument("archive", type=Path, help="Path to the ROM ZIP")
+    extract_parser.add_argument("output", type=Path, help="New output directory (must not exist)")
+    extract_parser.add_argument("--max-total-size", type=int, default=2 * 1024 * 1024 * 1024,
+                                help="Maximum total uncompressed size in bytes")
+    extract_parser.add_argument("--max-file-size", type=int, default=512 * 1024 * 1024,
+                                help="Maximum size of one extracted file in bytes")
+    extract_parser.add_argument("--max-entries", type=int, default=10000,
+                                help="Maximum number of archive entries")
 
     image_parser = commands.add_parser(
         "inspect-image", help="Inspect an Android sparse image or identify a raw image"
@@ -88,6 +101,24 @@ def main(argv: list[str] | None = None) -> int:
                 print("WARNING: unsafe archive paths detected:")
                 for name in result["unsafe_paths"]:
                     print(f"  - {name}")
+        return 0
+    if args.command == "extract-zip":
+        try:
+            result = extract_zip(
+                args.archive,
+                args.output,
+                max_total_size=args.max_total_size,
+                max_file_size=args.max_file_size,
+                max_entries=args.max_entries,
+            )
+        except ExtractionError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+        print(f"Archive: {result['archive']}")
+        print(f"Output: {result['destination']}")
+        print(f"Files extracted: {result['files_extracted']}")
+        print(f"Uncompressed: {result['uncompressed_bytes']} bytes")
+        print("Source archive was not modified; existing output directories are never overwritten.")
         return 0
     if args.command == "inspect-image":
         try:
