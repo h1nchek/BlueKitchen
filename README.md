@@ -1,0 +1,83 @@
+# BlueKitchen
+
+**A modular Android ROM kitchen for inspecting, analyzing, and preparing Android firmware.**
+
+BlueKitchen is an open-source toolkit focused on making Android ROM work more understandable and repeatable. It starts with a cross-platform Python CLI and is designed to grow into a modular toolkit with optional graphical interfaces.
+
+> **Project status:** Early development. The initial foundation is being built; firmware modification and image-writing features are not yet implemented.
+
+## Goals
+
+- Inspect ROM archives without modifying the source files.
+- Produce clear, machine-readable reports about archive contents.
+- Add dedicated backends for Android image formats and boot-related images.
+- Validate device configuration files and highlight missing or inconsistent metadata.
+- Keep operations explicit, testable, and safe by default.
+- Support Windows and Linux where the underlying tools allow it.
+
+## Planned modules
+
+| Module | Purpose | Status |
+| --- | --- | --- |
+| CLI core | Commands, configuration, logging, exit codes | In progress |
+| ROM inspector | ZIP listing and basic metadata report | Planned |
+| Image tools | Android sparse images and partition images | Planned |
+| Boot image tools | Inspect boot and vendor boot metadata | Planned |
+| Compatibility checks | Validate device configuration and manifests | Planned |
+| GUI | Optional desktop interface | Planned |
+
+## Quick start
+
+BlueKitchen currently targets Python 3.10 or newer.
+
+```bash
+python -m venv .venv
+```
+
+Windows:
+
+```powershell
+.venv\Scripts\Activate.ps1
+python -m pip install -e ".[dev]"
+bluekitchen --help
+```
+
+Linux:
+
+```bash
+source .venv/bin/activate
+python -m pip install -e ".[dev]"
+bluekitchen --help
+```
+
+## Development
+
+Run tests:
+
+```bash
+python -m pytest
+```
+
+Run lint checks:
+
+```bash
+python -m ruff check .
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines and [docs/ROADMAP.md](docs/ROADMAP.md) for planned work.
+
+## Design principles
+
+1. **Read-only first:** inspection commands must not alter firmware inputs.
+2. **No silent destructive actions:** future write/patch operations must require explicit intent and explain their effects.
+3. **Modular backends:** format-specific tools should be isolated behind stable interfaces.
+4. **No fake support:** unsupported formats and missing dependencies must be reported honestly.
+5. **Test before claiming:** a feature is not considered supported until it has tests and documented limitations.
+
+## Disclaimer
+
+BlueKitchen is an experimental firmware-analysis and development toolkit. Android firmware operations can cause data loss or render a device unusable if performed incorrectly. Always understand an operation and keep independent backups before working with device firmware. The project does not guarantee compatibility with any device or ROM.
+
+## License
+
+BlueKitchen is licensed under the **GNU General Public License v3.0 or later**. See [LICENSE](LICENSE).
