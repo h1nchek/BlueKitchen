@@ -83,13 +83,16 @@ jobs:
           python-version: "3.12"
       - name: Read package version
         id: version
-        shell: python
+        shell: bash
         run: |
-          import os, tomllib
+          python - <<'PY'
+          import os
+          import tomllib
           from pathlib import Path
           version = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
               output.write(f"version={version}\\n")
+          PY
       - name: Download platform executable
         uses: actions/download-artifact@v4
         with:
