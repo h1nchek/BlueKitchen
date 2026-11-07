@@ -21,10 +21,12 @@ from bluekitchen.inspector import InspectionError, inspect_zip
 from bluekitchen.payload import PayloadError, inspect_payload
 from bluekitchen.packer import PackingError, pack_zip
 from bluekitchen.super_extract import SuperExtractError, extract_super_partition
+from bluekitchen.rom import RomInspectionError, inspect_rom_archive
 
 
 OPERATIONS: dict[str, tuple[str, bool]] = {
     "Inspect ROM ZIP": ("zip", False),
+    "Inspect ROM + OTA metadata": ("rom", False),
     "Extract ROM ZIP": ("extract", True),
     "Build ROM ZIP": ("pack", True),
     "Inspect OTA payload": ("payload", False),
@@ -169,6 +171,7 @@ class BlueKitchenApp:
             try:
                 functions: dict[str, Callable[..., dict[str, Any]]] = {
                     "zip": inspect_zip,
+                    "rom": inspect_rom_archive,
                     "extract": extract_zip,
                     "payload": inspect_payload,
                     "image": inspect_image,
@@ -188,7 +191,7 @@ class BlueKitchenApp:
             except (
                 OSError, ValueError, RuntimeError, BootImageError, SuperImageError,
                 ExtractionError, ImageError, InspectionError, PayloadError, SuperExtractError,
-                PackingError,
+                PackingError, RomInspectionError,
             ) as exc:
                 self.results.put((False, str(exc)))
 

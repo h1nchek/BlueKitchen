@@ -9,7 +9,7 @@ from __future__ import annotations
 import struct
 from collections import Counter
 from pathlib import Path
-from typing import Any
+from typing import Any, BinaryIO
 
 
 MAGIC = b"CrAU"
@@ -166,49 +166,46 @@ def _parse_manifest(manifest: bytes) -> dict[str, Any]:
     }
 
 
-def inspect_payload(path: str | Path) -> dict[str, Any]:
-    """Inspect an Android OTA payload header and manifest without applying it."""
-    payload_path = Path(path)
-    if not payload_path.is_file():
-        raise PayloadError(f"File does not exist: {payload_path}")
+def inspect_payload_stream(
+    stream: BinaryIO, file_size: int, file_name: str = "payload.bin"
+) -> dict[str, Any]:
+    """Inspect a payload from an already-open binary stream without reading partition data."""
     try:
-        file_size = payload_path.stat().st_size
-        with payload_path.open("rb") as stream:
-            fixed_header = stream.read(20)
-            if len(fixed_header) < 20:
-                raise PayloadError("File is too small to contain an Android payload header")
-            if fixed_header[:4] != MAGIC:
-                raise PayloadError("Invalid payload magic; expected CrAU")
+        fixed_header = stream.read(20)
+        if len(fixed_header) < 20:
+            raise PayloadError("File is too small to contain an Android payload header")
+        if fixed_header[:4] != MAGIC:
+            raise PayloadError("Invalid payload magic; expected CrAU")
 
-            version, manifest_size = struct.unpack(">QQ", fixed_header[4:20])
-            if version < 1:
-                raise PayloadError(f"Unsupported payload major version: {version}")
-            if manifest_size > MAX_MANIFEST_SIZE:
-                raise PayloadError(
-                    f"Manifest is too large ({manifest_size} bytes; limit is {MAX_MANIFEST_SIZE})"
-                )
+        version, manifest_size = struct.unpack(">QQ", fixed_header[4:20])
+        if version < 1:
+            raise PayloadError(f"Unsupported payload major version: {version}")
+        if manifest_size > MAX_MANIFEST_SIZE:
+            raise PayloadError(
+                f"Manifest is too large ({manifest_size} bytes; limit is {MAX_MANIFEST_SIZE})"
+            )
 
-            metadata_signature_size = 0
-            if version >= 2:
-                signature_size_bytes = stream.read(4)
-                if len(signature_size_bytes) != 4:
-                    raise PayloadError("Truncated payload header (missing metadata signature size)")
-                metadata_signature_size = struct.unpack(">I", signature_size_bytes)[0]
+        metadata_signature_size = 0
+        if version >= 2:
+            signature_size_bytes = stream.read(4)
+            if len(signature_size_bytes) != 4:
+                raise PayloadError("Truncated payload header (missing metadata signature size)")
+            metadata_signature_size = struct.unpack(">I", signature_size_bytes)[0]
 
-            header_size = 24 if version >= 2 else 20
-            manifest_offset = header_size
-            manifest_end = manifest_offset + manifest_size
-            data_offset = manifest_end + metadata_signature_size
-            if data_offset > file_size:
-                raise PayloadError("Header declares metadata beyond the end of the file")
+        header_size = 24 if version >= 2 else 20
+        manifest_offset = header_size
+        manifest_end = manifest_offset + manifest_size
+        data_offset = manifest_end + metadata_signature_size
+        if data_offset > file_size:
+            raise PayloadError("Header declares metadata beyond the end of the file")
 
-            manifest = stream.read(manifest_size)
-            if len(manifest) != manifest_size:
-                raise PayloadError("Truncated payload manifest")
+        manifest = stream.read(manifest_size)
+        if len(manifest) != manifest_size:
+            raise PayloadError("Truncated payload manifest")
 
         summary = _parse_manifest(manifest)
         return {
-            "file": payload_path.name,
+            "file": file_name,
             "format": "android_ota_payload",
             "magic": MAGIC.decode("ascii"),
             "major_version": version,
@@ -221,6 +218,20 @@ def inspect_payload(path: str | Path) -> dict[str, Any]:
             **summary,
             "inspection_only": True,
         }
+    except PayloadError:
+        raise
+    except OSError as exc:
+        raise PayloadError(f"Could not read payload: {exc}") from exc
+
+
+def inspect_payload(path: str | Path) -> dict[str, Any]:
+    """Inspect an Android OTA payload file without applying its partition operations."""
+    payload_path = Path(path)
+    if not payload_path.is_file():
+        raise PayloadError(f"File does not exist: {payload_path}")
+    try:
+        with payload_path.open("rb") as stream:
+            return inspect_payload_stream(stream, payload_path.stat().st_size, payload_path.name)
     except PayloadError:
         raise
     except OSError as exc:

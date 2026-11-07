@@ -72,3 +72,17 @@ bluekitchen inspect-super super.raw --slot 1 --json
 Sparse super images must first be expanded with `expand-sparse`. The parser validates geometry, metadata-header and table SHA-256 checksums, table bounds, extent references, and metadata-area boundaries. It tries the primary metadata copy and then the backup copy for the selected slot. It does not modify the image, reconstruct logical partition images, or prove that a ROM is compatible with a device.
 
 Format references: [AOSP liblp metadata format](https://android.googlesource.com/platform/system/core/+/master/fs_mgr/liblp/include/liblp/metadata_format.h), [AOSP metadata reader](https://chromium.googlesource.com/aosp/platform/system/core/+/087796c31c8726b60c7471eaf0621da6100ef092/fs_mgr/liblp/reader.cpp), and [AOSP metadata offsets](https://android.googlesource.com/platform/system/core/+/f4cd54e51290e011bfbe9786368da42868d30844/fs_mgr/liblp/utility.cpp).
+
+
+## ROM OTA ZIP inspection
+
+Use `inspect-rom` to inspect an Android ROM ZIP and, when present, parse the metadata header and partition operation summary from its embedded `payload.bin` without extracting the partition data:
+
+```bash
+bluekitchen inspect-rom BlueOS-mojito.zip --expect-device mojito
+bluekitchen inspect-rom BlueOS-mojito.zip --json
+```
+
+The optional `--expect-device` argument compares the requested codename with the comma-separated `pre-device` value in `META-INF/com/android/metadata`. The result is only a metadata comparison: a match does not prove device compatibility or that the ROM will boot. If the package has no `pre-device` metadata, the result is reported as unknown rather than treated as a match.
+
+For payload ZIPs, the parser reads only the CrAU header and bounded protobuf manifest through the ZIP stream. It does not extract or apply partition operations, verify the ZIP's complete CRCs, validate AVB signatures, or modify the archive. Unsafe archive paths are reported. This command is a release-inspection aid, not an installer or firmware patcher.

@@ -13,6 +13,7 @@ BlueKitchen is developed in small, verifiable stages. A roadmap item is not comp
 ## Phase 1 — ROM package analysis
 
 - [x] Read-only ZIP inspection and Android marker detection
+- [x] Inspect OTA ZIP metadata and embedded payload manifest without extracting partition data
 - [x] Bounded ZIP extraction with traversal, symlink and size-limit checks
 - [x] Create a ZIP package from a prepared directory with symlink and overwrite protection
 - [x] Parse Android OTA payload headers and manifest metadata (initial)
