@@ -16,6 +16,7 @@ from bluekitchen.super_extract import SuperExtractError, extract_super_partition
 from bluekitchen.inspector import InspectionError, inspect_zip
 from bluekitchen.payload import PayloadError, inspect_payload
 from bluekitchen.packer import PackingError, pack_zip
+from bluekitchen.rom import RomInspectionError, inspect_rom_archive
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -31,6 +32,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     inspect_parser.add_argument("archive", type=Path, help="Path to the ROM ZIP")
     inspect_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
+
+    rom_parser = commands.add_parser(
+        "inspect-rom", help="Inspect a ROM ZIP and its embedded OTA payload metadata"
+    )
+    rom_parser.add_argument("archive", type=Path, help="Path to the ROM ZIP")
+    rom_parser.add_argument(
+        "--expect-device", help="Compare OTA pre-device metadata with this device codename"
+    )
+    rom_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
 
     extract_parser = commands.add_parser(
         "extract-zip", help="Safely extract a ROM ZIP into a new directory"
@@ -118,6 +128,33 @@ def main(argv: list[str] | None = None) -> int:
                 print("WARNING: unsafe archive paths detected:")
                 for name in result["unsafe_paths"]:
                     print(f"  - {name}")
+        return 0
+    if args.command == "inspect-rom":
+        try:
+            result = inspect_rom_archive(args.archive, expected_device=args.expect_device)
+        except RomInspectionError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+        if args.json:
+            print(json.dumps(result, indent=2, ensure_ascii=False))
+        else:
+            print(f"ROM archive: {result['file']}")
+            print(f"Entries: {result['entries']}")
+            print("Markers: " + (", ".join(result["markers"]) or "none detected"))
+            if result["pre_devices"]:
+                print("OTA pre-device: " + ", ".join(result["pre_devices"]))
+            if result["expected_device"]:
+                status = (
+                    "MATCH" if result["device_match"] is True
+                    else "MISMATCH" if result["device_match"] is False
+                    else "UNKNOWN (metadata absent)"
+                )
+                print(f"Expected device: {result['expected_device']} — {status}")
+            if result["payload"] is not None:
+                print(f"Payload partitions: {', '.join(result['payload_partitions']) or 'none listed'}")
+                print(f"Payload operations: {result['payload']['operation_count']}")
+            for note in result["notes"]:
+                print(f"Note: {note}")
         return 0
     if args.command == "extract-zip":
         try:
