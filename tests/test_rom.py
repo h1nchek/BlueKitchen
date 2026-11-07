@@ -77,3 +77,15 @@ def test_reject_invalid_embedded_payload(tmp_path):
 
     with pytest.raises(RomInspectionError, match="embedded payload"):
         inspect_rom_archive(archive)
+
+def test_reject_duplicate_payload_entries(tmp_path):
+    archive = tmp_path / "duplicate.zip"
+    with ZipFile(archive, "w") as zip_file:
+        zip_file.writestr("payload.bin", _make_payload())
+        zip_file.writestr("payload.bin", _make_payload())
+
+    import pytest
+    from bluekitchen.rom import RomInspectionError
+
+    with pytest.raises(RomInspectionError, match="duplicate critical entry"):
+        inspect_rom_archive(archive)
