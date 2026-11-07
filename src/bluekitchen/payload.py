@@ -9,7 +9,7 @@ from __future__ import annotations
 import struct
 from collections import Counter
 from pathlib import Path
-from typing import Any
+from typing import Any, BinaryIO
 
 
 MAGIC = b"CrAU"
