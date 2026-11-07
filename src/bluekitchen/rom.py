@@ -54,6 +54,11 @@ def inspect_rom_archive(
         with zipfile.ZipFile(archive_path) as archive:
             members = archive.infolist()
             by_name = {member.filename: member for member in members}
+            for critical_name in (PAYLOAD_PATH, METADATA_PATH):
+                if sum(member.filename == critical_name for member in members) > 1:
+                    raise RomInspectionError(
+                        f"Archive contains duplicate critical entry: {critical_name}"
+                    )
             unsafe_paths = [
                 member.filename for member in members if not _is_safe_member(member.filename)
             ]
